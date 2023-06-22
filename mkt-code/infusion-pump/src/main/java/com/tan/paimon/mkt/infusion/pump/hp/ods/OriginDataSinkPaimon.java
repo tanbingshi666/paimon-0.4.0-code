@@ -93,7 +93,8 @@ public class OriginDataSinkPaimon {
                 "  `header` MAP<STRING, STRING>,\n" +
                 "  `data` MAP<STRING, STRING>,\n" +
                 "  `ts` BIGINT,\n" +
-                "  `ts_ltz` AS TO_TIMESTAMP_LTZ(ts, 3)\n" +
+                "  `ts_ltz` AS TO_TIMESTAMP_LTZ(ts, 3), \n" +
+                "  WATERMARK FOR ts_ltz AS ts_ltz - INTERVAL '5' SECOND\n" +
                 ") WITH (\n" +
                 "  'connector' = 'kafka',\n" +
                 "  'topic' = 'MKT_INFUSION_PUMP_HP_SERIES_JSON',\n" +
@@ -194,10 +195,13 @@ public class OriginDataSinkPaimon {
          */
 
         // create paimon table for save mkt infusion pump origin data
+        // create paimon table setting from https://paimon.apache.org/docs/0.4/how-to/creating-tables/
+        // create paimon table properties with bucket setting from https://paimon.apache.org/docs/0.4/maintenance/configurations/#coreoptions
+        // create paimon Append-Only table doc from https://paimon.apache.org/docs/0.4/concepts/append-only-table/
         /**
          * tableEnv.executeSql("DROP TABLE ods_equ_mkt_infusion_pump_hp_series");
          */
-        tableEnv.executeSql("DROP TABLE ods_equ_mkt_infusion_pump_hp_series");
+
         tableEnv.executeSql("CREATE TABLE IF NOT EXISTS ods_equ_mkt_infusion_pump_hp_series (\n" +
                 "    `factory_num` STRING,\n" +
                 "    `equ_type` STRING,\n" +
