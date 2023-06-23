@@ -19,6 +19,19 @@
     <dependencies>
 
         <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>RELEASE</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>cn.hutool</groupId>
+            <artifactId>hutool-all</artifactId>
+            <version>5.8.11</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-java</artifactId>
             <version>1.16.0</version>
@@ -121,6 +134,22 @@
             <artifactId>paimon-flink-1.16</artifactId>
             <version>0.4-SNAPSHOT</version>
         </dependency>
+
+        <!--   https://nightlies.apache.org/flink/flink-docs-release-1.16/docs/connectors/datastream/jdbc/         -->
+        <!--   flink jdbc connector         -->
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-connector-jdbc</artifactId>
+            <version>1.16.0</version>
+        </dependency>
+
+        <!--    taos TDengine jdbc 驱动依赖包        -->
+        <dependency>
+            <groupId>com.taosdata.jdbc</groupId>
+            <artifactId>taos-jdbcdriver</artifactId>
+            <version>3.1.0</version>
+        </dependency>
+
 
     </dependencies>
 

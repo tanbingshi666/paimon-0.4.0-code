@@ -1,9 +1,6 @@
 package com.tan.paimon.mkt.infusion.pump.hp.ods;
 
-import org.apache.flink.configuration.CheckpointingOptions;
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.configuration.ExecutionOptions;
-import org.apache.flink.streaming.api.environment.CheckpointConfig;
 import org.apache.flink.table.api.EnvironmentSettings;
 import org.apache.flink.table.api.TableEnvironment;
 
@@ -94,7 +91,7 @@ public class OriginDataSinkPaimon {
                 "  `data` MAP<STRING, STRING>,\n" +
                 "  `ts` BIGINT,\n" +
                 "  `ts_ltz` AS TO_TIMESTAMP_LTZ(ts, 3), \n" +
-                "  WATERMARK FOR ts_ltz AS ts_ltz - INTERVAL '5' SECOND\n" +
+                "  WATERMARK FOR ts_ltz AS ts_ltz\n" +
                 ") WITH (\n" +
                 "  'connector' = 'kafka',\n" +
                 "  'topic' = 'MKT_INFUSION_PUMP_HP_SERIES_JSON',\n" +
@@ -238,7 +235,7 @@ public class OriginDataSinkPaimon {
                 "    PRIMARY KEY (dt, hh, factory_num, ts) NOT ENFORCED\n" +
                 ") PARTITIONED BY (dt, hh) WITH (\n" +
                 "    'bucket' = '1',\n" +
-                "    'bucket-key' = 'factory_num, ts',\n" +
+                "    'bucket-key' = 'factory_num,ts',\n" +
                 "    'write-mode' = 'change-log'\n" +
                 ");");
 

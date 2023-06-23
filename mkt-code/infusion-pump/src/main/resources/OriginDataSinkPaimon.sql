@@ -109,7 +109,7 @@ CREATE TABLE IF NOT EXISTS ods_equ_mkt_infusion_pump_hp_series
     hh
 ) WITH (
       'bucket' = '3',
-      'bucket-key' = 'factory_num, ts',
+      'bucket-key' = 'factory_num,ts',
       'write-mode' = 'change-log'
       );
 
