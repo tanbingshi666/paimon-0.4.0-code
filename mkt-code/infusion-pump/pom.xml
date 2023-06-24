@@ -14,6 +14,9 @@
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>
+
+        <slf4j.version>1.7.32</slf4j.version>
+        <log4j2.version>2.17.1</log4j2.version>
     </properties>
 
     <dependencies>
@@ -123,6 +126,13 @@
             <version>1.16.0</version>
         </dependency>
 
+        <!-- https://mvnrepository.com/artifact/org.apache.flink/flink-statebackend-rocksdb -->
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-statebackend-rocksdb</artifactId>
+            <version>1.16.0</version>
+        </dependency>
+
         <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-json</artifactId>
@@ -150,6 +160,32 @@
             <version>3.1.0</version>
         </dependency>
 
+        <!--   https://nightlies.apache.org/flink/flink-docs-release-1.16/docs/deployment/advanced/logging/         -->
+        <!--   flink log4j 日志         -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
+            <!--                <scope>provided</scope>-->
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j-impl</artifactId>
+            <version>${log4j2.version}</version>
+            <!--                <scope>provided</scope>-->
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>${log4j2.version}</version>
+            <!--                <scope>provided</scope>-->
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+            <version>${log4j2.version}</version>
+            <!--                <scope>provided</scope>-->
+        </dependency>
 
     </dependencies>
 
