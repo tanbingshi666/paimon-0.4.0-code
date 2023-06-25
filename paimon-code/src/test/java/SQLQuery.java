@@ -6,7 +6,7 @@ public class SQLQuery {
 
     public static void main(String[] args) {
 
-        System.setProperty("HADOOP_USER_NAME", "hdfs");
+        System.setProperty("HADOOP_USER_NAME", "tanbs");
 
         Configuration conf = new Configuration();
         // basic setting from https://nightlies.apache.org/flink/flink-docs-release-1.16/docs/deployment/config/#basic-setup
@@ -22,7 +22,7 @@ public class SQLQuery {
         // state backend setting from https://nightlies.apache.org/flink/flink-docs-release-1.16/docs/deployment/config/#checkpoints-and-state-backends
         conf.setString("state.backend", "hashmap");
         conf.setString("state.checkpoint-storage", "filesystem");
-        conf.setString("state.checkpoints.dir", "hdfs://hadoop101:8020/meiotds/chk/mkt/dws");
+        conf.setString("state.checkpoints.dir", "hdfs://hadoop102:8020/meiotds/chk/mkt/dws");
 
         EnvironmentSettings settings = EnvironmentSettings.newInstance()
                 .inStreamingMode()
@@ -32,7 +32,7 @@ public class SQLQuery {
 
         tableEnv.executeSql("CREATE CATALOG my_catalog WITH (\n" +
                 "    'type' = 'paimon',\n" +
-                "    'warehouse' = 'hdfs://hadoop101:8020/paimon/code'\n" +
+                "    'warehouse' = 'hdfs://hadoop102:8020/paimon/code'\n" +
                 ");");
         tableEnv.executeSql("USE CATALOG my_catalog;");
 
@@ -40,7 +40,7 @@ public class SQLQuery {
 //                .execute()
 //                .print();
 
-        tableEnv.sqlQuery("select * from ods_kafka_source_hp_series_8")
+        tableEnv.sqlQuery("select * from ods_kafka_source_hp_series_full")
                 .execute()
                 .print();
 
