@@ -1,0 +1,124 @@
+{
+    "startDate": "2023-06-25 14:17:09",
+    "equId":"10001",
+    "deptName":"nxyk",
+    "roomNo":"1",
+    "bedNo":"1",
+    "HR":"78",
+    "PVCs":"0",
+    "RR":null,
+    "SpO2":null,
+    "PR":null,
+    "ts":1687673829100
+}
+
+{
+    "startDate": "2023-06-25 14:17:09",
+    "equId":"10001",
+    "deptName":"nxyk",
+    "roomNo":"1",
+    "bedNo":"1",
+    "HR":null,
+    "PVCs":null,
+    "RR":"23",
+    "SpO2":null,
+    "PR":null,
+    "ts":1687673829100
+}
+
+{
+    "startDate": "2023-06-25 14:17:09",
+    "equId":"10001",
+    "deptName":"nxyk",
+    "roomNo":"1",
+    "bedNo":"1",
+    "HR":null,
+    "PVCs":null,
+    "RR":null,
+    "SpO2":"97",
+    "PR":"74",
+    "ts":1687673829100
+}
+
+
+/opt/app/kafka-3.0.0/bin/kafka-topics.sh --bootstrap-server hadoop102:9092 --create --topic temp_06_14 --partitions 1 --replication-factor 1
+
+/opt/app/kafka-3.0.0/bin/kafka-console-consumer.sh --bootstrap-server hadoop102:9092 --topic temp_06_14 --from-beginning
+
+
+--FlinkSQL参数设置
+set `table.dynamic-table-options.enabled`=`true`;
+SET `env.state.backend`=`rocksdb`;
+SET `execution.checkpointing.interval`=`60000`;
+SET `execution.checkpointing.tolerable-failed-checkpoints`=`3`;
+SET `execution.checkpointing.min-pause`=`60000`;
+
+CREATE TEMPORARY TABLE IF NOT EXISTS kafka_source (
+  `startDate` STRING,
+  `equId` STRING,
+  `deptName` STRING,
+  `roomNo` STRING,
+  `bedNo` STRING,
+  `HR` STRING,
+  `PVCs` STRING,
+  `RR` STRING,
+  `SpO2` STRING,
+  `PR` STRING,
+  `ts` BIGINT,
+  `ts_ltz` AS TO_TIMESTAMP_LTZ(ts, 3),
+  WATERMARK FOR ts_ltz AS ts_ltz
+) WITH (
+  'connector' = 'kafka',
+  'topic' = 'temp_06_14',
+  'properties.bootstrap.servers' = 'hadoop102:9092,hadoop103:9092,hadoop104:9092',
+  'properties.group.id' = 'MKT_INFUSION_PUMP_HP_SERIES_JSON_06_22',
+  'scan.startup.mode' = 'earliest-offset',
+  'format' = 'json'
+);
+
+
+CREATE TABLE IF NOT EXISTS `default`.`dwd_mr_old_monitor_equ_effective_param_detail` (
+
+  `start_date` STRING,
+  `equ_id` STRING,
+  `dept_name` STRING,
+  `room_no` STRING,
+  `bed_no` STRING,
+  `hr` STRING,
+  `pvcs` STRING,
+  `rr` STRING,
+  `spo2` STRING,
+  `pr` STRING,
+
+  `ts` BIGINT,
+  `dt` STRING,
+
+   PRIMARY KEY (dt, equ_id, ts) NOT ENFORCED
+) PARTITIONED BY (dt) WITH (
+  'bucket' = '1', -- 指定 bucket 个数
+  'bucket-key' = 'equ_id,ts',
+  -- 记录排序字段
+  'sequence.field' = 'ts',
+  -- 选择 full-compaction ，在compaction后产生完整的changelog
+  'changelog-producer' = 'full-compaction',
+  -- compaction 间隔时间
+  'changelog-producer.compaction-interval' = '2 min',
+  'merge-engine' = 'partial-update',
+  -- 忽略DELETE数据，避免运行报错
+  'partial-update.ignore-delete' = 'true'
+);
+
+INSERT INTO `default`.`dwd_mr_old_monitor_equ_effective_param_detail` SELECT
+  `startDate` AS `start_date`,
+  `equId` AS `equ_id`,
+  `deptName` AS `dept_name`,
+  `roomNo` AS `room_no`,
+  `bedNo` AS `bed_no`,
+  `HR` AS `hr`,
+  `PVCs` AS `pvcs`,
+  `RR` AS `rr`,
+  `SpO2` AS `spo2`,
+  `PR` AS `pr`,
+  `ts` AS `ts`,
+   DATE_FORMAT(`ts_ltz`,'yyyy-MM-dd') as dt
+FROM kafka_source;
