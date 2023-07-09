@@ -1,0 +1,132 @@
+-- 1 创建 hive catalog
+CREATE CATALOG meiotds_hive WITH (
+    'type' = 'paimon',
+    'metastore' = 'hive',
+    'uri' = 'thrift://hadoop0104:9083',
+    'warehouse' = 'hdfs://hadoop0102:8020/meiotds/warehouse'
+);
+-- 2 使用 hive catalog
+USE CATALOG meiotds_hive;
+-- 3 创建 hive 数据库
+CREATE DATABASE IF NOT EXISTS meiotds_db;
+USE meiotds_db;
+
+-- 4 创建 kafka 临时表
+CREATE TEMPORARY TABLE IF NOT EXISTS kafka_mkt_infusion_pump_hp_series_json (
+  `ip` STRING,
+  `port` BIGINT,
+  `code` BIGINT,
+  `header` MAP<STRING, STRING>,
+  `startWindow` BIGINT,
+  `data` MAP<STRING, STRING>,
+  `ts` BIGINT,
+  `ts_ltz` AS TO_TIMESTAMP_LTZ(ts, 3),
+  WATERMARK FOR ts_ltz AS ts_ltz
+) WITH (
+  'connector' = 'kafka',
+  'topic' = 'MKT_INFUSION_PUMP_HP_SERIES_JSON',
+  'properties.bootstrap.servers' = 'hadoop0102:9092,hadoop0103:9092,hadoop0104:9092',
+  'properties.group.id' = 'MKT_INFUSION_PUMP_HP_SERIES_JSON_2023_07_09',
+  'scan.startup.mode' = 'earliest-offset',
+  'format' = 'json'
+);
+
+-- 5 创建 paimon append only 表
+CREATE TABLE IF NOT EXISTS `meiotds_db`.`ods_equ_mkt_infusion_pump_hp_series`
+(
+    -- 设备数据字段
+    `factory_num` STRING,
+    `equ_type` STRING,
+    `equ_num` STRING,
+    `work_sta` STRING,
+    `dept_name` STRING,
+    `room_no` STRING,
+    `bed_no` STRING,
+    `state` STRING,
+    `drug_name` STRING,
+    `inject_mode` STRING,
+    `preset_value` FLOAT,
+    `speed` FLOAT,
+    `already_inject_time` INTEGER,
+    `remain_time` INTEGER,
+    `already_inject_value` FLOAT,
+    `residual` FLOAT,
+    `alarm1` STRING,
+    `alarm2` STRING,
+    `alarm3` STRING,
+    `alarm4` STRING,
+    `pressure_value` FLOAT,
+    `pressure_uint` STRING,
+    -- 基础数据字段
+    `ip` STRING,
+    `port` BIGINT,
+    `code` BIGINT,
+    `header` MAP<STRING,STRING>,
+    `start_window` BIGINT,
+    `ts` BIGINT,
+    -- 分区字段
+    `dt` STRING
+) PARTITIONED BY (dt)
+WITH (
+      -- 桶个数
+      'bucket' = '6',
+      -- 桶排序 keys
+      'bucket-key' = 'factory_num,start_window',
+      -- 是否为只写 默认 false 如果设置为 true 则跳过自动 compaction 和 snapshot 过期 (则需要另起 compact job)
+      'write-only' = 'false',
+      -- 写模式为 append-only
+      'write-mode' = 'append-only',
+      -- 最小文件个数执行合并 默认 5
+      'compaction.min.file-num' = '5',
+      -- 最多文件个数执行合并 默认 50
+      'compaction.max.file-num' = '50',
+      -- 触发 commit 次数后执行 full compaction
+      'full-compaction.delta-commits' = '5'
+);
+
+-- 6 插入 paimon 表数据
+INSERT INTO `meiotds_db`.`ods_equ_mkt_infusion_pump_hp_series`
+SELECT `data`['factoryNum']                         as `factory_num`,
+       `data`['equType']                            as `equ_type`,
+       `data`['equNum']                             as `equ_num`,
+       `data`['workSta']                            as `work_sta`,
+       `data`['deptName']                           as `dept_name`,
+       `data`['roomNo']                             as `room_no`,
+       `data`['bedNo']                              as `bed_no`,
+       `data`['state']                              as `state`,
+       `data`['drugName']                           as `drug_name`,
+       `data`['injectMode']                         as `inject_mode`,
+       CAST(`data`['presetValue'] AS FLOAT)         as `preset_value`,
+       CAST(`data`['speed'] AS FLOAT)               as `speed`,
+       CAST(`data`['alreadyInjectTime'] AS INTEGER) as `already_inject_time`,
+       CAST(`data`['remainTime'] AS INTEGER)        as `remain_time`,
+       CAST(`data`['alreadyInjectValue'] AS FLOAT)  as `already_inject_value`,
+       CAST(`data`['residual'] AS FLOAT)            as `residual`,
+       `data`['alarm1']                             as `alarm1`,
+       `data`['alarm2']                             as `alarm2`,
+       `data`['alarm3']                             as `alarm3`,
+       `data`['alarm4']                             as `alarm4`,
+       CAST(`data`['pressureValue'] AS FLOAT)       as `pressure_value`,
+       `data`['pressureUint']                       as `pressure_uint`,
+
+       `ip`,
+       `port`,
+       `code`,
+       `header`,
+       `startWindow` AS `start_window`,
+       `ts`,
+
+       DATE_FORMAT(`ts_ltz`, 'yyyy-MM-dd')          as dt
+
+FROM kafka_mkt_infusion_pump_hp_series_json;
+
+
+
+
+
+
+
+
+
+
+
